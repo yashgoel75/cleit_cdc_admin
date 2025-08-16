@@ -7,8 +7,10 @@ import { getAuth, signOut, onAuthStateChanged, User } from "firebase/auth";
 import logo from "@/assets/cleit.png";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [isMobile, setIsMobile] = useState(false);
@@ -147,6 +149,24 @@ export default function Header() {
                 >
                   {displayName}
                 </p>
+                <p
+                  onClick={() => router.replace("/account/jobs")}
+                  className="cursor-pointer hover:underline"
+                >
+                  Jobs
+                </p>
+                <p
+                  onClick={() => router.replace("/account/tests")}
+                  className="cursor-pointer hover:underline"
+                >
+                  Tests
+                </p>
+                <p
+                  onClick={() => router.replace("/searchStudent")}
+                  className="cursor-pointer hover:underline"
+                >
+                  Search Student
+                </p>
                 {isLogoutConfirmationMessage ? (
                   <>
                     <div className="flex-1">
@@ -240,6 +260,58 @@ export default function Header() {
           </button>
         </div>
       </header>
+      {(!isMobile && user) && (
+        <div className="hidden lg:flex w-full border-b border-gray-300 py-2 justify-center">
+          <nav className="flex gap-2 font-medium">
+            {user ? (
+              <Link href={"/account"}>
+                <button
+                  className={`cursor-pointer px-4 py-1 rounded-md transition ${
+                    pathname.endsWith("/account")
+                      ? "bg-indigo-600 text-white"
+                      : "text-gray-700 hover:bg-indigo-50"
+                  }`}
+                >
+                  Account
+                </button>
+              </Link>
+            ) : null}
+            <Link href={"/account/jobs"}>
+              <button
+                className={`cursor-pointer px-4 py-1 rounded-md transition ${
+                  pathname.endsWith("/jobs")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-700 hover:bg-indigo-50"
+                }`}
+              >
+                Jobs
+              </button>
+            </Link>
+            <Link href={"/account/tests"}>
+              <button
+                className={`cursor-pointer px-4 py-1 rounded-md transition ${
+                  pathname.endsWith("/tests")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-700 hover:bg-indigo-50"
+                }`}
+              >
+                Tests
+              </button>
+            </Link>
+            <Link href={"/searchStudent"}>
+              <button
+                className={`cursor-pointer px-4 py-1 rounded-md transition ${
+                  pathname.endsWith("/searchStudent")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-700 hover:bg-indigo-50"
+                }`}
+              >
+                Search Student
+              </button>
+            </Link>
+          </nav>
+        </div>
+      )}
     </>
   );
 }
