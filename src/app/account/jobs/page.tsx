@@ -350,18 +350,16 @@ export default function Jobs() {
                     </p>
                   </div>
                   <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-semibold">
-                    💼 Job
+                    Job
                   </div>
                 </div>
 
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center text-gray-600">
-                    <span className="mr-2">📍</span>
                     <span className="font-medium">Location:</span>
                     <span className="ml-2">{job.location}</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span className="mr-2">⏰</span>
                     <span className="font-medium">Deadline:</span>
                     <span className="ml-2">
                       {job.deadline
@@ -375,7 +373,6 @@ export default function Jobs() {
                   </div>
                   {job.linkToApply && (
                     <div className="flex items-center text-gray-600">
-                      <span className="mr-2">🔗</span>
                       <span className="font-medium">Apply:</span>
                       <a
                         href={job.linkToApply}

@@ -7,6 +7,7 @@ import Snow from "quill/themes/snow";
 
 import Bold from "quill/formats/bold";
 import Italic from "quill/formats/italic";
+import Underline from "quill/formats/underline";
 import Header from "quill/formats/header";
 import List from "quill/formats/list";
 import Link from "quill/formats/link";
@@ -16,6 +17,7 @@ Quill.register({
     "themes/snow": Snow,
     "formats/bold": Bold,
     "formats/italic": Italic,
+    "formats/underline": Underline,
     "formats/header": Header,
     "formats/list": List,
     "formats/link": Link,

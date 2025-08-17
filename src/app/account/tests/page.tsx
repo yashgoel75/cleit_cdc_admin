@@ -155,11 +155,36 @@ export default function Tests() {
                   </h4>
                   <div className="space-y-4">
                     {[
-                      { name: "title", label: "Test Title", type: "text", icon: "🎯" },
-                      { name: "date", label: "Test Date", type: "date", icon: "📅" },
-                      { name: "duration", label: "Duration (e.g., 2 hours)", type: "text", icon: "⏰" },
-                      { name: "mode", label: "Test Mode", type: "text", icon: "💻" },
-                      { name: "link", label: "Test Link/URL", type: "url", icon: "🔗" }
+                      {
+                        name: "title",
+                        label: "Test Title",
+                        type: "text",
+                        icon: "🎯",
+                      },
+                      {
+                        name: "date",
+                        label: "Test Date",
+                        type: "date",
+                        icon: "📅",
+                      },
+                      {
+                        name: "duration",
+                        label: "Duration (e.g., 2 hours)",
+                        type: "text",
+                        icon: "⏰",
+                      },
+                      {
+                        name: "mode",
+                        label: "Test Mode",
+                        type: "text",
+                        icon: "💻",
+                      },
+                      {
+                        name: "link",
+                        label: "Test Link/URL",
+                        type: "url",
+                        icon: "🔗",
+                      },
                     ].map(({ name, label, type, icon }) => (
                       <div key={name} className="group">
                         <label
@@ -189,7 +214,9 @@ export default function Tests() {
               <div className="lg:col-span-1">
                 <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-xl border-2 border-purple-100 h-full">
                   <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-                    <span className="bg-purple-100 p-2 rounded-lg mr-3">📖</span>
+                    <span className="bg-purple-100 p-2 rounded-lg mr-3">
+                      📖
+                    </span>
                     Test Description
                   </h4>
                   <div className="bg-white rounded-xl p-2 shadow-sm">
@@ -203,7 +230,8 @@ export default function Tests() {
                   </div>
                   <p className="text-xs text-gray-500 mt-2 flex items-center">
                     <span className="mr-1">💡</span>
-                    Add detailed instructions, topics covered, and important notes (recommended: ~200 words)
+                    Add detailed instructions, topics covered, and important
+                    notes (recommended: ~200 words)
                   </p>
                 </div>
               </div>
@@ -254,8 +282,12 @@ export default function Tests() {
           <div className="text-center py-12">
             <div className="bg-gray-50 rounded-2xl p-8 max-w-md mx-auto">
               <span className="text-6xl mb-4 block">📝</span>
-              <p className="text-xl text-gray-600 font-medium">No tests found</p>
-              <p className="text-gray-500 mt-2">Click &quot;Add New Test&quot; to get started!</p>
+              <p className="text-xl text-gray-600 font-medium">
+                No tests found
+              </p>
+              <p className="text-gray-500 mt-2">
+                Click &quot;Add New Test&quot; to get started!
+              </p>
             </div>
           </div>
         ) : (
@@ -266,20 +298,20 @@ export default function Tests() {
                 className="bg-white border-2 border-gray-100 rounded-2xl shadow-lg p-6 hover:shadow-2xl hover:border-indigo-200 transition-all duration-300 transform hover:-translate-y-1"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-800 flex-1">{test.title}</h3>
+                  <h3 className="text-xl font-bold text-gray-800 flex-1">
+                    {test.title}
+                  </h3>
                   <div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
                     {test.mode}
                   </div>
                 </div>
-                
+
                 <div className="space-y-3 mb-6 relative">
                   <div className="flex items-center text-gray-600">
-                    <span className="mr-2">📅</span>
                     <span className="font-medium">Date:</span>
                     <span className="ml-2">{test.date}</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span className="mr-2">⏰</span>
                     <span className="font-medium">Duration:</span>
                     <span className="ml-2">{test.duration}</span>
                   </div>
@@ -287,8 +319,9 @@ export default function Tests() {
 
                 <div className="mb-4">
                   <div className="flex items-center mb-2">
-                    <span className="mr-2">📖</span>
-                    <span className="font-semibold text-gray-700">Description:</span>
+                    <span className="font-semibold text-gray-700">
+                      Description:
+                    </span>
                   </div>
                   <div className="bg-gray-50 p-3 rounded-lg max-h-32 overflow-y-auto">
                     <div
