@@ -266,7 +266,11 @@ export default function AdminUserSearch() {
                 <div className="flex items-center gap-3">
                   <Image src={linkedin} height={25} alt="LinkedIn" />
                   <a
-                    href={`https://linkedin.com/in/${selectedUser.linkedin}`}
+                    href={
+                      selectedUser.linkedin.startsWith("http")
+                        ? selectedUser.linkedin
+                        : `https://linkedin.com/in/${selectedUser.linkedin}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline"
@@ -275,11 +279,16 @@ export default function AdminUserSearch() {
                   </a>
                 </div>
               )}
+
               {selectedUser.github && (
                 <div className="flex items-center gap-3">
                   <Image src={Github} height={25} alt="Github" />
                   <a
-                    href={`https://github.com/${selectedUser.github}`}
+                    href={
+                      selectedUser.github.startsWith("http")
+                        ? selectedUser.github
+                        : `https://github.com/${selectedUser.github}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline"
@@ -288,11 +297,16 @@ export default function AdminUserSearch() {
                   </a>
                 </div>
               )}
+
               {selectedUser.leetcode && (
                 <div className="flex items-center gap-3">
                   <Image src={Leetcode} height={25} alt="Leetcode" />
                   <a
-                    href={`https://leetcode.com/u/${selectedUser.leetcode}`}
+                    href={
+                      selectedUser.leetcode.startsWith("http")
+                        ? selectedUser.leetcode
+                        : `https://leetcode.com/u/${selectedUser.leetcode}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline"
