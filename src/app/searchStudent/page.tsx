@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useDeferredValue, useRef } from "react";
 import Header from "../Header/page";
 import Footer from "../Footer/page";
 import "./page.css";
@@ -30,75 +30,183 @@ interface UserProfile {
 
 export default function AdminUserSearch() {
   const [searchValue, setSearchValue] = useState("");
-  const [userData, setUserData] = useState<UserProfile | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [allStudents, setAllStudents] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
 
-  const handleSearch = async () => {
-    if (!searchValue.trim()) return;
-    setLoading(true);
-    setError(null);
-    setUserData(null);
+  function getStudentYear(batchEnd: number, cutoffMonth = 6): string {
+    const now = new Date();
+    const academicEndYear =
+      now.getMonth() >= cutoffMonth ? now.getFullYear() + 1 : now.getFullYear();
 
-    try {
-      const res = await fetch(
-        `/api/searchStudent?query=${encodeURIComponent(searchValue)}`
-      );
-      if (!res.ok) {
+    const diff = batchEnd - academicEndYear;
+
+    const yearMap: Record<number, string> = {
+      0: "4th Year",
+      1: "3rd Year",
+      2: "2nd Year",
+      3: "1st Year",
+    };
+
+    if (diff < 0) return "Graduated";
+    if (diff > 3) return "Future";
+    return yearMap[diff] ?? "Unknown";
+  }
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/getAllStudents");
+        if (!res.ok) throw new Error("Failed to fetch students.");
         const data = await res.json();
-        throw new Error(data.error || "Failed to fetch user data.");
+        setAllStudents(data.students || []);
+        setError(null);
+      } catch (err) {
+        setError("Failed to fetch students.");
+      } finally {
+        setLoading(false);
       }
-        const data = await res.json();
-      setUserData(data.userByUsername || data.userByEmail);
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred."
-      );
-    } finally {
-      setLoading(false);
+    };
+    fetchStudents();
+  }, []);
+
+  const deferredQuery = useDeferredValue(searchValue);
+  const filteredStudents = useMemo(() => {
+    const q = deferredQuery.trim().toLowerCase();
+    if (!q) return allStudents;
+
+    return allStudents.filter((s) => {
+      const year = getStudentYear(s.batchEnd);
+      const haystack = [
+        s.name,
+        s.username,
+        s.collegeEmail,
+        s.department,
+        s.enrollmentNumber,
+        String(s.phone),
+        String(s.batchStart),
+        String(s.batchEnd),
+        year,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(q);
+    });
+  }, [allStudents, deferredQuery]);
+
+  useEffect(() => {
+    if (searchValue) setError(null);
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (
+      selectedUser &&
+      !filteredStudents.some((s) => s.username === selectedUser.username)
+    ) {
+      setSelectedUser(null);
     }
+  }, [filteredStudents, selectedUser]);
+
+  useEffect(() => {
+    if (selectedUser) {
+      setTimeout(() => {
+        mainRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  }, [selectedUser]);
+
+  const groupedStudents: Record<
+    string,
+    Record<string, UserProfile[]>
+  > = useMemo(() => {
+    return filteredStudents.reduce((acc, student) => {
+      const year = getStudentYear(student.batchEnd);
+      if (!acc[year]) acc[year] = {};
+      if (!acc[year][student.department]) acc[year][student.department] = [];
+      acc[year][student.department].push(student);
+      return acc;
+    }, {} as Record<string, Record<string, UserProfile[]>>);
+  }, [filteredStudents]);
+
+  const fixedYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+  const otherYears = Object.keys(groupedStudents).filter(
+    (y) => !fixedYears.includes(y)
+  );
+
+  const isSearching = Boolean(searchValue.trim());
+  const displayYears = isSearching
+    ? Object.keys(groupedStudents)
+    : [...fixedYears, ...otherYears];
+
+  const expandAllMatches = isSearching && displayYears.length > 0;
+
+  const [expandedYear, setExpandedYear] = useState<string | null>(null);
+  const [expandedDeptKey, setExpandedDeptKey] = useState<string | null>(null);
+  const toggleYear = (year: string) =>
+    setExpandedYear((prev) => (prev === year ? null : year));
+  const toggleDept = (year: string, dept: string) => {
+    const key = `${year}::${dept}`;
+    setExpandedDeptKey((prev) => (prev === key ? null : key));
   };
 
   return (
     <>
       <Header />
-      <main className="w-[95%] min-h-[85vh] lg:w-full max-w-6xl mx-auto py-10 md:py-16 px-4">
+      <main
+        ref={mainRef}
+        className="w-[95%] min-h-[85vh] lg:w-full max-w-6xl mx-auto py-10 md:py-16 px-4"
+      >
         <h2 className="text-4xl font-extrabold text-center text-gray-900 mb-8">
           Search User
         </h2>
 
-        <div className="flex justify-center gap-3 mb-10">
+        <div className="flex justify-center gap-3 mb-6">
           <input
             type="text"
-            placeholder="Enter email or username"
+            placeholder="Search Student"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="md:text-lg w-80 border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+            className="md:text-lg w-96 border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
           />
-          <button
-            onClick={handleSearch}
-            disabled={loading}
-            className="cursor-pointer md:text-lg px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50"
-          >
-            {loading ? "Searching..." : "Search"}
-          </button>
+          {searchValue && (
+            <button
+              onClick={() => setSearchValue("")}
+              className="cursor-pointer md:text-lg px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-md"
+              aria-label="Clear search"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
+        {loading && (
+          <p className="text-center text-gray-600 mb-4">Loading students…</p>
+        )}
         {error && (
-          <p className="text-center text-red-600 font-medium mb-6">{error}</p>
+          <p className="text-center text-red-600 font-medium mb-4">{error}</p>
+        )}
+        {!loading && !error && searchValue && filteredStudents.length === 0 && (
+          <p className="text-center text-gray-700 mb-4">
+            No matches for “{searchValue}”.
+          </p>
         )}
 
-        {userData && (
-          <div className="bg-white p-6 rounded-xl shadow-md space-y-6">
+        {selectedUser && (
+          <div className="bg-white p-6 rounded-xl shadow-md space-y-6 mb-8">
             <h3 className="text-3xl font-bold text-center text-gray-800 mb-4">
-              {userData.name}
+              {selectedUser.name}
             </h3>
 
-            {userData.resume && (
+            {selectedUser.resume && (
               <div className="flex items-center gap-4 mb-4">
                 <span className="font-medium text-gray-700">Resume:</span>
                 <a
-                  href={userData.resume}
+                  href={selectedUser.resume}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md shadow hover:bg-indigo-700"
@@ -111,54 +219,54 @@ export default function AdminUserSearch() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
               <div>
                 <p className="font-medium text-gray-700">Username</p>
-                <p>{userData.username}</p>
+                <p>{selectedUser.username}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Enrollment Number</p>
-                <p>{userData.enrollmentNumber}</p>
+                <p>{selectedUser.enrollmentNumber}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">College Email</p>
-                <p>{userData.collegeEmail}</p>
+                <p>{selectedUser.collegeEmail}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Phone</p>
-                <p>{userData.phone}</p>
+                <p>{selectedUser.phone}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Department</p>
-                <p>{userData.department}</p>
+                <p>{selectedUser.department}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">10th Percentage</p>
-                <p>{userData.tenthPercentage}%</p>
+                <p>{selectedUser.tenthPercentage}%</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">12th Percentage</p>
-                <p>{userData.twelfthPercentage}%</p>
+                <p>{selectedUser.twelfthPercentage}%</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">College GPA</p>
-                <p>{userData.collegeGPA}</p>
+                <p>{selectedUser.collegeGPA}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Batch</p>
                 <p>
-                  {userData.batchStart} - {userData.batchEnd}
+                  {selectedUser.batchStart} - {selectedUser.batchEnd}
                 </p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Status</p>
-                <p>{userData.status}</p>
+                <p>{selectedUser.status}</p>
               </div>
             </div>
 
             <div className="mt-6 flex flex-col gap-3">
-              {userData.linkedin && (
+              {selectedUser.linkedin && (
                 <div className="flex items-center gap-3">
                   <Image src={linkedin} height={25} alt="LinkedIn" />
                   <a
-                    href={`https://linkedin.com/in/${userData.linkedin}`}
+                    href={`https://linkedin.com/in/${selectedUser.linkedin}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline"
@@ -167,11 +275,11 @@ export default function AdminUserSearch() {
                   </a>
                 </div>
               )}
-              {userData.github && (
+              {selectedUser.github && (
                 <div className="flex items-center gap-3">
                   <Image src={Github} height={25} alt="Github" />
                   <a
-                    href={`https://github.com/${userData.github}`}
+                    href={`https://github.com/${selectedUser.github}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline"
@@ -180,11 +288,11 @@ export default function AdminUserSearch() {
                   </a>
                 </div>
               )}
-              {userData.leetcode && (
+              {selectedUser.leetcode && (
                 <div className="flex items-center gap-3">
                   <Image src={Leetcode} height={25} alt="Leetcode" />
                   <a
-                    href={`https://leetcode.com/u/${userData.leetcode}`}
+                    href={`https://leetcode.com/u/${selectedUser.leetcode}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline"
@@ -196,6 +304,89 @@ export default function AdminUserSearch() {
             </div>
           </div>
         )}
+
+        {displayYears.map((year) => {
+          const depts = groupedStudents[year];
+          const showYearContent = expandAllMatches || expandedYear === year;
+          return (
+            <div
+              key={year}
+              className="mb-6 border border-gray-300 shadow-md rounded-lg p-4 bg-gray-50"
+            >
+              <button
+                onClick={() => {
+                  if (!expandAllMatches) toggleYear(year);
+                }}
+                className="w-full text-left font-bold text-xl text-gray-800 hover:cursor-pointer"
+              >
+                {year}
+              </button>
+
+              {showYearContent && (
+                <div className="pl-4 mt-2">
+                  {depts ? (
+                    Object.entries(depts).map(([dept, students]) => {
+                      const key = `${year}::${dept}`;
+                      const showDeptContent =
+                        expandAllMatches || expandedDeptKey === key;
+                      return (
+                        <div key={key} className="mb-4">
+                          <button
+                            onClick={() => {
+                              if (!expandAllMatches) toggleDept(year, dept);
+                            }}
+                            className="text-lg text-gray-800 hover:cursor-pointer"
+                          >
+                            {dept}
+                          </button>
+
+                          {showDeptContent && (
+                            <ul className="pl-4 mt-2 space-y-3">
+                              {students
+                                .slice()
+                                .sort(
+                                  (a, b) =>
+                                    Number(a.enrollmentNumber) -
+                                    Number(b.enrollmentNumber)
+                                )
+                                .map((s) => (
+                                  <li
+                                    key={s.username}
+                                    onClick={() => {
+                                      setSelectedUser(s);
+                                    }}
+                                    className="border border-gray-100 p-3 rounded-md bg-white shadow cursor-pointer hover:bg-indigo-50"
+                                    title="Click to view profile"
+                                  >
+                                    <p className="font-medium">
+                                      {s.name} ({s.username})
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      {s.collegeEmail}
+                                    </p>
+                                    <p className="text-sm">
+                                      Enrollment Number: {s.enrollmentNumber}
+                                    </p>
+                                    <p className="text-sm">
+                                      Status: {s.status}
+                                    </p>
+                                  </li>
+                                ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-600 italic pl-4">
+                      No entries found.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </main>
       <Footer />
     </>
