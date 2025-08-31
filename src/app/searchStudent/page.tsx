@@ -165,15 +165,15 @@ export default function AdminUserSearch() {
           Search User
         </h2>
 
-        <div className="flex justify-center gap-3 mb-6">
+        <div className="flex justify-center gap-2 mb-6">
           <input
             type="text"
             placeholder="Search Student"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="md:text-lg w-96 border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+            className="md:text-lg w-56 md:w-96 border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
           />
-          {searchValue && (
+          {
             <button
               onClick={() => setSearchValue("")}
               className="cursor-pointer md:text-lg px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-md"
@@ -181,7 +181,7 @@ export default function AdminUserSearch() {
             >
               Clear
             </button>
-          )}
+          }
         </div>
 
         {loading && (
@@ -307,7 +307,11 @@ export default function AdminUserSearch() {
 
         {displayYears.map((year) => {
           const depts = groupedStudents[year];
+          const yearCount = depts
+            ? Object.values(depts).reduce((sum, arr) => sum + arr.length, 0)
+            : 0;
           const showYearContent = expandAllMatches || expandedYear === year;
+
           return (
             <div
               key={year}
@@ -317,13 +321,16 @@ export default function AdminUserSearch() {
                 onClick={() => {
                   if (!expandAllMatches) toggleYear(year);
                 }}
-                className="w-full text-left font-bold text-xl text-gray-800 hover:cursor-pointer"
+                className="w-full flex justify-between items-center text-left text-xl text-gray-800 hover:cursor-pointer"
               >
-                {year}
+                <span className="font-semibold text-base md:text-lg">
+                  {year}
+                </span>
+                <span className="text-gray-600 text-sm">{yearCount}</span>
               </button>
 
               {showYearContent && (
-                <div className="pl-4 mt-2">
+                <div className="mt-2">
                   {depts ? (
                     Object.entries(depts).map(([dept, students]) => {
                       const key = `${year}::${dept}`;
@@ -335,13 +342,16 @@ export default function AdminUserSearch() {
                             onClick={() => {
                               if (!expandAllMatches) toggleDept(year, dept);
                             }}
-                            className="text-lg text-gray-800 hover:cursor-pointer"
+                            className="flex justify-between items-center w-full md:text-lg text-gray-800 hover:cursor-pointer"
                           >
-                            {dept}
+                            <span>{dept}</span>
+                            <span className="text-gray-600 text-sm">
+                              {students.length}
+                            </span>
                           </button>
 
                           {showDeptContent && (
-                            <ul className="pl-4 mt-2 space-y-3">
+                            <ul className="md:pl-4 mt-2 space-y-3">
                               {students
                                 .slice()
                                 .sort(
