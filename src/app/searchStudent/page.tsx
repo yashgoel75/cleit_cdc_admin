@@ -8,6 +8,8 @@ import Image from "next/image";
 import linkedin from "@/assets/LinkedIn.png";
 import Github from "@/assets/Github.png";
 import Leetcode from "@/assets/Leetcode.png";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 interface UserProfile {
   name: string;
@@ -28,6 +30,58 @@ interface UserProfile {
   resume: string;
 }
 
+async function exportToExcelGrouped(
+  groupedStudents: Record<string, Record<string, UserProfile[]>>,
+  fileName: string = "students_grouped.xlsx"
+) {
+  const workbook = new ExcelJS.Workbook();
+
+  for (const [year, departments] of Object.entries(groupedStudents)) {
+    const worksheet = workbook.addWorksheet(year);
+
+    worksheet.columns = [
+      { header: "Name", key: "name", width: 20 },
+      { header: "Username", key: "username", width: 20 },
+      { header: "Enrollment No.", key: "enrollmentNumber", width: 20 },
+      { header: "College Email", key: "collegeEmail", width: 30 },
+      { header: "Phone", key: "phone", width: 15 },
+      { header: "Department", key: "department", width: 20 },
+      { header: "10th %", key: "tenthPercentage", width: 10 },
+      { header: "12th %", key: "twelfthPercentage", width: 10 },
+      { header: "GPA", key: "collegeGPA", width: 10 },
+      { header: "Batch Start", key: "batchStart", width: 15 },
+      { header: "Batch End", key: "batchEnd", width: 15 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "LinkedIn", key: "linkedin", width: 30 },
+      { header: "GitHub", key: "github", width: 30 },
+      { header: "LeetCode", key: "leetcode", width: 30 },
+      { header: "Resume", key: "resume", width: 30 },
+    ];
+
+    let rowPointer = 2;
+
+    for (const [dept, students] of Object.entries(departments)) {
+      const deptRow = worksheet.addRow([`${dept} (${students.length})`]);
+      deptRow.font = { bold: true };
+      worksheet.mergeCells(`A${rowPointer}:P${rowPointer}`);
+      rowPointer++;
+
+      students.forEach((s) => {
+        worksheet.addRow(s);
+        rowPointer++;
+      });
+
+      worksheet.addRow([]);
+      rowPointer++;
+    }
+
+    worksheet.getRow(1).font = { bold: true };
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  saveAs(new Blob([buffer]), fileName);
+}
+
 export default function AdminUserSearch() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -40,7 +94,6 @@ export default function AdminUserSearch() {
     const now = new Date();
     const academicEndYear =
       now.getMonth() >= cutoffMonth ? now.getFullYear() + 1 : now.getFullYear();
-
     const diff = batchEnd - academicEndYear;
 
     const yearMap: Record<number, string> = {
@@ -124,6 +177,19 @@ export default function AdminUserSearch() {
     string,
     Record<string, UserProfile[]>
   > = useMemo(() => {
+    return allStudents.reduce((acc, student) => {
+      const year = getStudentYear(student.batchEnd);
+      if (!acc[year]) acc[year] = {};
+      if (!acc[year][student.department]) acc[year][student.department] = [];
+      acc[year][student.department].push(student);
+      return acc;
+    }, {} as Record<string, Record<string, UserProfile[]>>);
+  }, [allStudents]);
+
+  const groupedFilteredStudents: Record<
+    string,
+    Record<string, UserProfile[]>
+  > = useMemo(() => {
     return filteredStudents.reduce((acc, student) => {
       const year = getStudentYear(student.batchEnd);
       if (!acc[year]) acc[year] = {};
@@ -134,13 +200,13 @@ export default function AdminUserSearch() {
   }, [filteredStudents]);
 
   const fixedYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-  const otherYears = Object.keys(groupedStudents).filter(
+  const otherYears = Object.keys(groupedFilteredStudents).filter(
     (y) => !fixedYears.includes(y)
   );
 
   const isSearching = Boolean(searchValue.trim());
   const displayYears = isSearching
-    ? Object.keys(groupedStudents)
+    ? Object.keys(groupedFilteredStudents)
     : [...fixedYears, ...otherYears];
 
   const expandAllMatches = isSearching && displayYears.length > 0;
@@ -157,6 +223,7 @@ export default function AdminUserSearch() {
   return (
     <>
       <Header />
+
       <main
         ref={mainRef}
         className="w-[95%] min-h-[85vh] lg:w-full max-w-6xl mx-auto py-10 md:py-16 px-4"
@@ -182,6 +249,28 @@ export default function AdminUserSearch() {
               Clear
             </button>
           }
+        </div>
+
+        <div className="flex justify-center gap-2 mb-6">
+          <button
+            onClick={() =>
+              exportToExcelGrouped(groupedStudents, "All_Students_Grouped.xlsx")
+            }
+            className="px-4 py-2 bg-indigo-500 text-white rounded-md shadow hover:bg-indigo-700 cursor-pointer"
+          >
+            Download All
+          </button>
+          {/* <button
+            onClick={() =>
+              exportToExcelGrouped(
+                groupedFilteredStudents,
+                "Filtered_Students.xlsx"
+              )
+            }
+            className="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 cursor-pointer"
+          >
+            Download Current View
+          </button> */}
         </div>
 
         {loading && (
