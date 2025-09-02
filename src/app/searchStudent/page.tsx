@@ -409,7 +409,7 @@ export default function AdminUserSearch() {
         )}
 
         {displayYears.map((year) => {
-          const depts = groupedStudents[year];
+          const depts = groupedFilteredStudents[year];
           const yearCount = depts
             ? Object.values(depts).reduce((sum, arr) => sum + arr.length, 0)
             : 0;
