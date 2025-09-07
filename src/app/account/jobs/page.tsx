@@ -335,7 +335,7 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">
-                      No additional fields added. Click "Add Field" to include custom information like salary, experience level, benefits, etc.
+                      No additional fields added. Click &quot;Add Field&quot; to include custom information like salary, experience level, benefits, etc.
                     </p>
                   )}
                 </div>
