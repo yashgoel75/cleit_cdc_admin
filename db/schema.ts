@@ -11,7 +11,17 @@ const job = new Schema({
     jobDescriptionPdf: String,
     eligibility: [String],
     linkToApply: String,
-    studentsApplied: [String]
+    studentsApplied: [String],
+    extraFields: [{
+    fieldName: {
+      type: String,
+      required: true,
+    },
+    fieldValue: {
+      type: String,
+      required: true,
+    },
+  }],
 }, { timestamps: true })
 
 const test = new Schema({

@@ -19,8 +19,9 @@ export default function Jobs() {
     role: string;
     location: string;
     description: string;
-    deadline: string; // stored as string in form, converted before sending
+    deadline: string;
     linkToApply: string;
+    extraFields?: { fieldName: string; fieldValue: string }[];
   }
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -34,6 +35,7 @@ export default function Jobs() {
     description: "",
     deadline: "",
     linkToApply: "",
+    extraFields: [],
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -68,6 +70,50 @@ export default function Jobs() {
     return () => unsub();
   }, []);
 
+  const addExtraField = () => {
+    setFormData({
+      ...formData,
+      extraFields: [
+        ...(formData.extraFields || []),
+        { fieldName: "", fieldValue: "" },
+      ],
+    });
+  };
+
+  const removeExtraField = (index: number) => {
+    const newExtraFields = [...(formData.extraFields || [])];
+    newExtraFields.splice(index, 1);
+    setFormData({
+      ...formData,
+      extraFields: newExtraFields,
+    });
+  };
+
+  const updateExtraField = (
+    index: number,
+    field: "fieldName" | "fieldValue",
+    value: string
+  ) => {
+    const newExtraFields = [...(formData.extraFields || [])];
+    newExtraFields[index] = { ...newExtraFields[index], [field]: value };
+    setFormData({
+      ...formData,
+      extraFields: newExtraFields,
+    });
+  };
+
+  const resetFormData = () => {
+    setFormData({
+      company: "",
+      role: "",
+      location: "",
+      description: "",
+      deadline: "",
+      linkToApply: "",
+      extraFields: [],
+    });
+  };
+
   const handleSubmit = async () => {
     if (!currentUser) return;
     const jobData = {
@@ -84,14 +130,7 @@ export default function Jobs() {
       body: JSON.stringify(body),
     });
     if (res.ok) {
-      setFormData({
-        company: "",
-        role: "",
-        location: "",
-        description: "",
-        deadline: "",
-        linkToApply: "",
-      });
+      resetFormData();
       setEditingId(null);
       setIsAdding(false);
       fetchJobs(currentUser.email);
@@ -119,26 +158,19 @@ export default function Jobs() {
         <div className="flex justify-center mb-8">
           <button
             onClick={() => {
-              setFormData({
-                company: "",
-                role: "",
-                location: "",
-                description: "",
-                deadline: "",
-                linkToApply: "",
-              });
+              resetFormData();
               setEditingId(null);
               setJobIdToDelete(null);
               setIsAdding(true);
             }}
-            className="bg-indigo-500 hover:bg-indigol-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+            className="bg-indigo-500 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
           >
             + Add New Job
           </button>
         </div>
 
         {(isAdding || editingId) && (
-          <div className="mb-12 bg-white p-8 rounded-2xl shadow-xl border border-gray-100 max-w-5xl mx-auto">
+          <div className="mb-12 bg-white p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto">
             <div className="flex items-center justify-center mb-8">
               <div className="bg-white px-6 py-2 rounded-lg">
                 <h3 className="text-2xl font-bold text-gray-800">
@@ -188,7 +220,7 @@ export default function Jobs() {
                         <input
                           id={name}
                           type={type}
-                          value={formData[name as keyof Job]}
+                          value={formData[name as keyof Job] as string}
                           onChange={(e) =>
                             setFormData({ ...formData, [name]: e.target.value })
                           }
@@ -249,9 +281,66 @@ export default function Jobs() {
                     </div>
                   </div>
                 </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 p-6 rounded-xl border-2 border-orange-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-700 flex items-center">
+                      <span className="bg-orange-100 p-2 rounded-lg mr-3">
+                        🏷️
+                      </span>
+                      Additional Fields
+                    </h4>
+                    <button
+                      onClick={addExtraField}
+                      className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-1 rounded-lg transition-colors duration-200 cursor-pointer"
+                    >
+                      + Add Field
+                    </button>
+                  </div>
+                  
+                  {formData.extraFields && formData.extraFields.length > 0 ? (
+                    <div className="space-y-3">
+                      {formData.extraFields.map((field, index) => (
+                        <div key={index} className="flex gap-3 items-start">
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              placeholder="Field name (e.g., Salary, Experience)"
+                              value={field.fieldName}
+                              onChange={(e) =>
+                                updateExtraField(index, "fieldName", e.target.value)
+                              }
+                              className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 bg-white text-sm"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              placeholder="Field value"
+                              value={field.fieldValue}
+                              onChange={(e) =>
+                                updateExtraField(index, "fieldValue", e.target.value)
+                              }
+                              className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 bg-white text-sm"
+                            />
+                          </div>
+                          <button
+                            onClick={() => removeExtraField(index)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-3 rounded-lg transition-colors duration-200 cursor-pointer text-sm"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      No additional fields added. Click "Add Field" to include custom information like salary, experience level, benefits, etc.
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Right Column - Job Description */}
               <div className="lg:col-span-1">
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-100 h-full">
                   <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
@@ -278,7 +367,6 @@ export default function Jobs() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-4 justify-center mt-8 pt-6 border-t border-gray-200">
               <button
                 onClick={handleSubmit}
@@ -288,14 +376,7 @@ export default function Jobs() {
               </button>
               <button
                 onClick={() => {
-                  setFormData({
-                    company: "",
-                    role: "",
-                    location: "",
-                    description: "",
-                    deadline: "",
-                    linkToApply: "",
-                  });
+                  resetFormData();
                   setEditingId(null);
                   setIsAdding(false);
                 }}
@@ -317,7 +398,6 @@ export default function Jobs() {
         ) : error ? (
           <div className="text-center py-8">
             <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md mx-auto">
-              <span className="text-4xl mb-2 block">❌</span>
               <p className="text-red-700 font-semibold">{error}</p>
             </div>
           </div>
@@ -384,6 +464,22 @@ export default function Jobs() {
                       </a>
                     </div>
                   )}
+
+                  {job.extraFields && job.extraFields.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="text-sm font-medium text-gray-700 mb-2">
+                        Additional Information:
+                      </div>
+                      <div className="space-y-1">
+                        {job.extraFields.map((field, index) => (
+                          <div key={index} className="flex items-center text-gray-600 text-sm">
+                            <span className="font-medium">{field.fieldName}:</span>
+                            <span className="ml-2">{field.fieldValue}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-4">
@@ -403,7 +499,10 @@ export default function Jobs() {
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
-                      setFormData(job);
+                      setFormData({
+                        ...job,
+                        extraFields: job.extraFields || [],
+                      });
                       setEditingId(job._id!);
                       setIsAdding(false);
                     }}
