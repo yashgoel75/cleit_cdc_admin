@@ -107,7 +107,7 @@ export default function AdminUserSearch() {
     if (diff > 3) return "Future";
     return yearMap[diff] ?? "Unknown";
   }
-
+  const [isRefresh, setIsRefresh] = useState(false);
   useEffect(() => {
     const fetchStudents = async () => {
       setLoading(true);
@@ -124,7 +124,7 @@ export default function AdminUserSearch() {
       }
     };
     fetchStudents();
-  }, []);
+  }, [isRefresh]);
 
   const deferredQuery = useDeferredValue(searchValue);
   const filteredStudents = useMemo(() => {
@@ -249,6 +249,13 @@ export default function AdminUserSearch() {
               Clear
             </button>
           }
+          <button
+            onClick={() => setIsRefresh(!isRefresh)}
+            className="cursor-pointer md:text-lg px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-md"
+            aria-label="Clear search"
+          >
+            Refresh
+          </button>
         </div>
 
         <div className="flex justify-center gap-2 mb-6">
