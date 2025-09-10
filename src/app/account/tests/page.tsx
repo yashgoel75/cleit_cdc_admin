@@ -592,9 +592,9 @@ export default function Tests() {
                             className="flex items-center text-gray-600 text-sm"
                           >
                             <span className="font-medium">
-                              {field.fieldName}:
+                              {field.fieldName.startsWith("Test PDF") ? "Related Document" : field.fieldName}:
                             </span>
-                            <span className="ml-2 wrap">{field.fieldValue.startsWith("https://res.cloudinary.com") ? <a target="_blank" href={field.fieldValue}><span className="underline text-indigo-600">View Test PDF</span></a> : field.fieldValue}</span>
+                            <span className="ml-2 wrap">{field.fieldValue.startsWith("https://res.cloudinary.com") ? <a target="_blank" href={field.fieldValue}><span className="underline text-indigo-600">View PDF</span></a> : field.fieldValue}</span>
                           </div>
                         ))}
                       </div>
