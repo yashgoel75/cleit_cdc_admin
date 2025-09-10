@@ -5,7 +5,7 @@ import { Job } from "../../../../db/schema";
 export async function GET() {
   try {
     await register();
-    const jobs = await Job.find().sort({ createdAt: -1 });
+    const jobs = await Job.find().sort({ createdAt: -1 }).populate('studentsApplied');
     return NextResponse.json({ jobs });
   } catch (error) {
     console.error("GET /api/jobs error:", error);

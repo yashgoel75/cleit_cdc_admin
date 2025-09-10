@@ -16,12 +16,20 @@ export default function Jobs() {
   interface Job {
     _id?: string;
     company: string;
+    type: string;
     role: string;
     location: string;
     description: string;
     deadline: string;
     linkToApply: string;
     extraFields?: { fieldName: string; fieldValue: string }[];
+    inputFields?: {
+      fieldName: string;
+      type: string;
+      placeholder?: string;
+      required?: boolean;
+      options?: string[];
+    }[];
   }
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -31,11 +39,13 @@ export default function Jobs() {
   const [formData, setFormData] = useState<Job>({
     company: "",
     role: "",
+    type: "",
     location: "",
     description: "",
     deadline: "",
     linkToApply: "",
     extraFields: [],
+    inputFields: [],
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -106,6 +116,7 @@ export default function Jobs() {
     setFormData({
       company: "",
       role: "",
+      type: "",
       location: "",
       description: "",
       deadline: "",
@@ -147,6 +158,32 @@ export default function Jobs() {
     if (res.ok) fetchJobs(currentUser.email);
   };
 
+  const addInputField = () => {
+    setFormData({
+      ...formData,
+      inputFields: [
+        ...(formData.inputFields || []),
+        { fieldName: "", type: "text", placeholder: "", required: false },
+      ],
+    });
+  };
+
+  const removeInputField = (index: number) => {
+    const newFields = [...(formData.inputFields || [])];
+    newFields.splice(index, 1);
+    setFormData({ ...formData, inputFields: newFields });
+  };
+
+  const updateInputField = <K extends keyof NonNullable<Job["inputFields"]>[0]>(
+    index: number,
+    field: K,
+    value: NonNullable<Job["inputFields"]>[0][K]
+  ) => {
+    const newFields = [...(formData.inputFields || [])];
+    newFields[index] = { ...newFields[index], [field]: value };
+    setFormData({ ...formData, inputFields: newFields });
+  };
+
   return (
     <>
       <Header />
@@ -179,6 +216,30 @@ export default function Jobs() {
               </div>
             </div>
 
+            <div className="group">
+              <label
+                htmlFor="type"
+                className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
+              >
+                <span className="mr-2">🎯</span>
+                Job Type
+              </label>
+              <select
+                id="type"
+                value={formData.type}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    type: e.target.value as Job["type"],
+                  })
+                }
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-300 bg-white shadow-sm hover:shadow-md mb-5 focus:outline-none"
+              >
+                <option value="Open Opportunity">Open Opportunity</option>
+                <option value="Campus Drive">Campus Drive</option>
+              </select>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border-2 border-emerald-100">
@@ -188,6 +249,7 @@ export default function Jobs() {
                     </span>
                     Company & Position Details
                   </h4>
+
                   <div className="space-y-4">
                     {[
                       {
@@ -297,7 +359,7 @@ export default function Jobs() {
                       + Add Field
                     </button>
                   </div>
-                  
+
                   {formData.extraFields && formData.extraFields.length > 0 ? (
                     <div className="space-y-3">
                       {formData.extraFields.map((field, index) => (
@@ -308,7 +370,11 @@ export default function Jobs() {
                               placeholder="Field name (e.g., Salary, Experience)"
                               value={field.fieldName}
                               onChange={(e) =>
-                                updateExtraField(index, "fieldName", e.target.value)
+                                updateExtraField(
+                                  index,
+                                  "fieldName",
+                                  e.target.value
+                                )
                               }
                               className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 bg-white text-sm"
                             />
@@ -319,7 +385,11 @@ export default function Jobs() {
                               placeholder="Field value"
                               value={field.fieldValue}
                               onChange={(e) =>
-                                updateExtraField(index, "fieldValue", e.target.value)
+                                updateExtraField(
+                                  index,
+                                  "fieldValue",
+                                  e.target.value
+                                )
                               }
                               className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 bg-white text-sm"
                             />
@@ -335,7 +405,128 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">
-                      No additional fields added. Click &quot;Add Field&quot; to include custom information like salary, experience level, benefits, etc.
+                      No additional fields added. Click &quot;Add Field&quot; to
+                      include custom information like salary, experience level,
+                      benefits, etc.
+                    </p>
+                  )}
+                </div>
+                <div className="bg-gradient-to-br from-pink-50 to-red-50 p-6 rounded-xl border-2 border-pink-100 mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-700 flex items-center">
+                      <span className="bg-pink-100 p-2 rounded-lg mr-3">
+                        📝
+                      </span>
+                      Application Form Fields
+                    </h4>
+                    <button
+                      onClick={addInputField}
+                      className="bg-pink-500 hover:bg-pink-600 text-white text-sm px-3 py-1 rounded-lg transition-colors duration-200 cursor-pointer"
+                    >
+                      + Add Input Field
+                    </button>
+                  </div>
+
+                  {formData.inputFields && formData.inputFields.length > 0 ? (
+                    <div className="space-y-3">
+                      {formData.inputFields.map((field, index) => (
+                        <div
+                          key={index}
+                          className="p-4 border border-gray-300 rounded-lg bg-white space-y-3"
+                        >
+                          <div className="grid grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              placeholder="Field name (e.g., GitHub Profile)"
+                              value={field.fieldName}
+                              onChange={(e) =>
+                                updateInputField(
+                                  index,
+                                  "fieldName",
+                                  e.target.value
+                                )
+                              }
+                              className="p-2 border border-gray-200 rounded"
+                            />
+                            <select
+                              value={field.type}
+                              onChange={(e) =>
+                                updateInputField(index, "type", e.target.value)
+                              }
+                              className="p-2 border border-gray-200 rounded"
+                            >
+                              <option value="text">Text</option>
+                              <option value="number">Number</option>
+                              <option value="select">Select</option>
+                              <option value="file">File Upload</option>
+                            </select>
+                          </div>
+
+                          <input
+                            type="text"
+                            placeholder="Placeholder"
+                            value={field.placeholder}
+                            onChange={(e) =>
+                              updateInputField(
+                                index,
+                                "placeholder",
+                                e.target.value
+                              )
+                            }
+                            className="w-full p-2 border border-gray-200 rounded"
+                          />
+
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-3 text-sm">
+                              <span className="text-gray-700">Required</span>
+                              <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 cursor-pointer ease-in">
+                                <input
+                                  type="checkbox"
+                                  checked={field.required}
+                                  onChange={(e) =>
+                                    updateInputField(
+                                      index,
+                                      "required",
+                                      e.target.checked
+                                    )
+                                  }
+                                  className="peer sr-only"
+                                />
+                                <div className="block bg-gray-300 peer-checked:bg-indigo-500 w-10 h-6 transition duration-300 rounded-full"></div>
+                                <div className="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform duration-300 peer-checked:translate-x-4"></div>
+                              </div>
+                            </label>
+                          </div>
+
+                          {field.type === "select" && (
+                            <textarea
+                              placeholder="Options (comma separated)"
+                              value={field.options?.join(",") || ""}
+                              onChange={(e) =>
+                                updateInputField(
+                                  index,
+                                  "options",
+                                  e.target.value.split(",")
+                                )
+                              }
+                              className="w-full p-2 border rounded text-sm"
+                            />
+                          )}
+
+                          <button
+                            onClick={() => removeInputField(index)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm cursor-pointer"
+                          >
+                            Remove Field
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      No input fields defined. Click &quot;Add Input Field&quot;
+                      to let students provide custom information like resume
+                      links, portfolio, preferences, etc.
                     </p>
                   )}
                 </div>
@@ -472,12 +663,33 @@ export default function Jobs() {
                       </div>
                       <div className="space-y-1">
                         {job.extraFields.map((field, index) => (
-                          <div key={index} className="flex items-center text-gray-600 text-sm">
-                            <span className="font-medium">{field.fieldName}:</span>
+                          <div
+                            key={index}
+                            className="flex items-center text-gray-600 text-sm"
+                          >
+                            <span className="font-medium">
+                              {field.fieldName}:
+                            </span>
                             <span className="ml-2">{field.fieldValue}</span>
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {job.inputFields && job.inputFields.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="text-sm font-medium text-gray-700 mb-2">
+                        Application Form Fields:
+                      </div>
+                      <ul className="list-disc pl-5 text-gray-600 text-sm">
+                        {job.inputFields.map((field, idx) => (
+                          <li key={idx}>
+                            {field.fieldName} ({field.type}
+                            {field.required ? ", required" : ""})
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>

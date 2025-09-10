@@ -159,7 +159,7 @@ export default function Header() {
                   onClick={() => router.replace("/account/tests")}
                   className="cursor-pointer hover:underline"
                 >
-                  Tests
+                  Hackathons
                 </p>
                 <p
                   onClick={() => router.replace("/searchStudent")}
@@ -295,7 +295,7 @@ export default function Header() {
                     : "text-gray-700 hover:bg-indigo-50"
                 }`}
               >
-                Tests
+                Hackathons/Tests
               </button>
             </Link>
             <Link href={"/searchStudent"}>

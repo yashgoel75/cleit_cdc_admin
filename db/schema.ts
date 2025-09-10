@@ -2,17 +2,51 @@ import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
 const job = new Schema({
-    company: String,
-    role: String,
-    location: String,
-    description: String,
-    deadline: String,
-    postedAt: { type: Date, default: Date.now },
-    jobDescriptionPdf: String,
-    eligibility: [String],
-    linkToApply: String,
-    studentsApplied: [String],
-    extraFields: [{
+  company: String,
+  role: String,
+  type: String,
+  location: String,
+  description: String,
+  deadline: String,
+  postedAt: { type: Date, default: Date.now },
+  jobDescriptionPdf: String,
+  eligibility: [String],
+  linkToApply: String,
+  pdfUrl: String,
+  studentsApplied: [String],
+  extraFields: [{
+    fieldName: {
+      type: String,
+      required: true,
+    },
+    fieldValue: {
+      type: String,
+      required: true,
+    },
+  }],
+  inputFields: [{
+    fieldName: { type: String, required: true },       
+    type: { type: String, required: true },            
+    placeholder: { type: String },                   
+    required: { type: Boolean, default: false },
+    options: [{ type: String }],                     
+  }]
+}, { timestamps: true })
+
+const test = new Schema({
+  title: { type: String, required: true },
+  description: String,
+  date: String,
+  time: String,
+  duration: String,
+  mode: { type: String },
+  link: String,
+  instructions: [String],
+  eligibility: [String],
+  deadline: String,
+  pdfUrl: String,
+  studentsApplied: [String],
+  extraFields: [{
     fieldName: {
       type: String,
       required: true,
@@ -24,46 +58,32 @@ const job = new Schema({
   }],
 }, { timestamps: true })
 
-const test = new Schema({
-    title: { type: String, required: true },
-    description: String,
-    date: String,
-    time: String,
-    duration: String,
-    mode: { type: String },
-    link: String,
-    instructions: [String],
-    eligibility: [String],
-    deadline: String,
-    studentsApplied: [String]
-}, { timestamps: true })
-
 const user = new Schema({
-    name: String,
-    username: String,
-    collegeEmail: String,
-    personalEmail: String,
-    enrollmentNumber: String,
-    phone: Number,
-    department: String,
-    tenthPercentage: Number,
-    twelfthPercentage: Number,
-    collegeGPA: Number,
-    batchStart: Number,
-    batchEnd: Number,
-    linkedin: String,
-    github: String,
-    leetcode: String,
-    resume: String,
-    status: String,
-    wishlist: [{ societyUsername: String }],
-    reminders: [{ societyUsername: String }],
+  name: String,
+  username: String,
+  collegeEmail: String,
+  personalEmail: String,
+  enrollmentNumber: String,
+  phone: Number,
+  department: String,
+  tenthPercentage: Number,
+  twelfthPercentage: Number,
+  collegeGPA: Number,
+  batchStart: Number,
+  batchEnd: Number,
+  linkedin: String,
+  github: String,
+  leetcode: String,
+  resume: String,
+  status: String,
+  wishlist: [{ societyUsername: String }],
+  reminders: [{ societyUsername: String }],
 });
 
 const admin = new Schema({
-    name: String,
-    email: String,
-    phone: Number
+  name: String,
+  email: String,
+  phone: Number
 })
 
 const Job = mongoose.models.Job || mongoose.model("Job", job);

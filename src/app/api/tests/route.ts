@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { newTest } = body;
-
+    console.log(body);
     await register();
     const test = new Test(newTest);
     await test.save();
@@ -33,7 +33,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
     const { testId, updates } = body;
-
+    console.log(body);
     await register();
     const updatedTest = await Test.findByIdAndUpdate(testId, updates, { new: true });
 
