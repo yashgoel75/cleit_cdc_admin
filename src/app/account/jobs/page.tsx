@@ -798,7 +798,7 @@ export default function Jobs() {
                             <span className="font-medium">
                               {field.fieldName}:
                             </span>
-                            <span className="ml-2">{field.fieldValue}</span>
+                            <span className="ml-2">{field.fieldValue.startsWith("https://res.cloudinary.com/") ? <a href={field.fieldValue} target="_blank">View PDF</a> : field.fieldValue}</span>
                           </div>
                         ))}
                       </div>
