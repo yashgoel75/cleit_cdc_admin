@@ -21,6 +21,7 @@ export default function Jobs() {
     location: string;
     description: string;
     deadline: string;
+    pdfUrl: string;
     linkToApply: string;
     extraFields?: { fieldName: string; fieldValue: string }[];
     inputFields?: {
@@ -32,6 +33,10 @@ export default function Jobs() {
     }[];
   }
 
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +44,12 @@ export default function Jobs() {
   const [formData, setFormData] = useState<Job>({
     company: "",
     role: "",
-    type: "",
+    type: "Open Opportunity",
     location: "",
     description: "",
     deadline: "",
     linkToApply: "",
+    pdfUrl: "",
     extraFields: [],
     inputFields: [],
   });
@@ -78,7 +84,7 @@ export default function Jobs() {
       }
     });
     return () => unsub();
-  }, []);
+  }, [router]);
 
   const addExtraField = () => {
     setFormData({
@@ -116,35 +122,114 @@ export default function Jobs() {
     setFormData({
       company: "",
       role: "",
-      type: "",
+      type: "Open Opportunity",
       location: "",
       description: "",
       deadline: "",
       linkToApply: "",
+      pdfUrl: "",
       extraFields: [],
+      inputFields: [],
     });
+    setPdfUrl("");
+    setPdfFile(null);
+  };
+
+  const uploadPdfToCloudinary = async (): Promise<string> => {
+    if (!pdfFile || !currentUser) return "";
+
+    const PdfformData = new FormData();
+    const publicId = `job_pdf_${Date.now()}`;
+    const folder = "job_pdfs";
+
+    const signatureRes = await fetch("/api/signtest", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ folder, public_id: publicId }),
+    });
+
+    const { signature, timestamp, apiKey } = await signatureRes.json();
+
+    PdfformData.append("file", pdfFile);
+    PdfformData.append("api_key", apiKey);
+    PdfformData.append("timestamp", timestamp.toString());
+    PdfformData.append("signature", signature);
+    PdfformData.append("public_id", publicId);
+    PdfformData.append("folder", folder);
+
+    const cloudRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
+      {
+        method: "POST",
+        body: PdfformData,
+      }
+    );
+
+    const cloudData = await cloudRes.json();
+    const url = cloudData.secure_url;
+    setFormData((prev) => (prev ? { ...prev, pdfUrl: url } : prev));
+    return typeof url === "string" ? url : "";
   };
 
   const handleSubmit = async () => {
     if (!currentUser) return;
-    const jobData = {
-      ...formData,
-      deadline: formData.deadline ? new Date(formData.deadline) : null,
-    };
-    const body = editingId
-      ? { jobId: editingId, updates: jobData }
-      : { newJob: jobData };
-    const method = editingId ? "PATCH" : "POST";
-    const res = await fetch("/api/jobs", {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
-      resetFormData();
-      setEditingId(null);
-      setIsAdding(false);
-      fetchJobs(currentUser.email);
+    setIsSubmitting(true);
+
+    try {
+      let finalPdfUrl = formData.pdfUrl || "";
+
+      if (pdfFile) {
+        finalPdfUrl = await uploadPdfToCloudinary();
+      }
+
+      const dataToSend = {
+        ...formData,
+        pdfUrl: finalPdfUrl,
+      };
+
+      const otherExtraFields =
+        dataToSend.extraFields?.filter(
+          (field) => field.fieldName !== "Job PDF"
+        ) || [];
+
+      if (finalPdfUrl) {
+        dataToSend.extraFields = [
+          ...otherExtraFields,
+          { fieldName: "Job PDF", fieldValue: finalPdfUrl },
+        ];
+      } else {
+        dataToSend.extraFields = otherExtraFields;
+      }
+
+      const body = editingId
+        ? {
+            jobId: editingId,
+            updates: dataToSend,
+            adminEmail: currentUser.email,
+          }
+        : { newJob: dataToSend, adminEmail: currentUser.email };
+
+      const method = editingId ? "PATCH" : "POST";
+
+      const res = await fetch("/api/jobs", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        resetFormData();
+        setEditingId(null);
+        setIsAdding(false);
+        fetchJobs(currentUser.email);
+      }
+    } catch (error) {
+      console.error("Failed to submit the job:", error);
+      setError("Failed to submit the job. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -153,7 +238,7 @@ export default function Jobs() {
     const res = await fetch("/api/jobs", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobId: id }),
+      body: JSON.stringify({ jobId: id, adminEmail: currentUser.email }),
     });
     if (res.ok) fetchJobs(currentUser.email);
   };
@@ -200,7 +285,7 @@ export default function Jobs() {
               setJobIdToDelete(null);
               setIsAdding(true);
             }}
-            className="bg-indigo-500 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+            className="bg-emerald-500 hover:bg-emerald-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
           >
             + Add New Job
           </button>
@@ -216,7 +301,7 @@ export default function Jobs() {
               </div>
             </div>
 
-            <div className="group">
+            <div className="mb-6">
               <label
                 htmlFor="type"
                 className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
@@ -230,10 +315,10 @@ export default function Jobs() {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    type: e.target.value as Job["type"],
+                    type: e.target.value,
                   })
                 }
-                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-300 bg-white shadow-sm hover:shadow-md mb-5 focus:outline-none"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-300 bg-white shadow-sm hover:shadow-md focus:outline-none"
               >
                 <option value="Open Opportunity">Open Opportunity</option>
                 <option value="Campus Drive">Campus Drive</option>
@@ -306,11 +391,11 @@ export default function Jobs() {
                         className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
                       >
                         <span className="mr-2">⏰</span>
-                        Application Deadline
+                        Application Deadline (Date & Time)
                       </label>
                       <input
                         id="deadline"
-                        type="date"
+                        type="datetime-local"
                         value={formData.deadline}
                         onChange={(e) =>
                           setFormData({ ...formData, deadline: e.target.value })
@@ -405,13 +490,14 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">
-                      No additional fields added. Click &quot;Add Field&quot; to
-                      include custom information like salary, experience level,
-                      benefits, etc.
+                      No additional fields added. Click &quot;Add Field&quot; to include
+                      custom information like salary, experience level, benefits,
+                      etc.
                     </p>
                   )}
                 </div>
-                <div className="bg-gradient-to-br from-pink-50 to-red-50 p-6 rounded-xl border-2 border-pink-100 mt-6">
+
+                <div className="bg-gradient-to-br from-pink-50 to-red-50 p-6 rounded-xl border-2 border-pink-100">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-700 flex items-center">
                       <span className="bg-pink-100 p-2 rounded-lg mr-3">
@@ -492,7 +578,7 @@ export default function Jobs() {
                                   }
                                   className="peer sr-only"
                                 />
-                                <div className="block bg-gray-300 peer-checked:bg-indigo-500 w-10 h-6 transition duration-300 rounded-full"></div>
+                                <div className="block bg-gray-300 peer-checked:bg-emerald-500 w-10 h-6 transition duration-300 rounded-full"></div>
                                 <div className="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform duration-300 peer-checked:translate-x-4"></div>
                               </div>
                             </label>
@@ -524,9 +610,9 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">
-                      No input fields defined. Click &quot;Add Input Field&quot;
-                      to let students provide custom information like resume
-                      links, portfolio, preferences, etc.
+                      No input fields defined. Click &quot;Add Input Field&quot; to let
+                      students provide custom information like resume links,
+                      portfolio, preferences, etc.
                     </p>
                   )}
                 </div>
@@ -540,6 +626,42 @@ export default function Jobs() {
                     </span>
                     Job Description
                   </h4>
+                  
+                  <div className="mb-5 bg-gradient-to-br from-green-50 to-teal-50 p-6 rounded-xl border-2 border-green-100">
+                    <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                      <span className="bg-green-100 p-2 rounded-lg mr-3">
+                        📄
+                      </span>
+                      Attach PDF (optional)
+                    </h4>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && file.type === "application/pdf") {
+                          setPdfFile(file);
+                        } else {
+                          alert("Only PDF files are allowed.");
+                          setPdfFile(null);
+                        }
+                      }}
+                      className="w-full text-sm text-gray-700"
+                    />
+                    {pdfUrl && (
+                      <p className="text-sm mt-2 text-green-600">
+                        ✅ Uploaded:{" "}
+                        <a
+                          href={pdfUrl}
+                          target="_blank"
+                          className="underline text-blue-600"
+                        >
+                          View PDF
+                        </a>
+                      </p>
+                    )}
+                  </div>
+
                   <div className="bg-white rounded-xl p-2 shadow-sm">
                     <QuillEditor
                       key={editingId || "new"}
@@ -561,9 +683,14 @@ export default function Jobs() {
             <div className="flex gap-4 justify-center mt-8 pt-6 border-t border-gray-200">
               <button
                 onClick={handleSubmit}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center cursor-pointer"
+                disabled={isSubmitting}
+                className={`${
+                  isSubmitting
+                    ? "bg-green-400 cursor-not-allowed"
+                    : "bg-green-500 hover:bg-green-600"
+                } text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center cursor-pointer`}
               >
-                {editingId ? "Update Job" : "Post Job"}
+                {isSubmitting ? "Posting..." : editingId ? "Update Job" : "Post Job"}
               </button>
               <button
                 onClick={() => {
@@ -571,6 +698,7 @@ export default function Jobs() {
                   setEditingId(null);
                   setIsAdding(false);
                 }}
+                disabled={isSubmitting}
                 className="bg-gray-400 hover:bg-gray-500 text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center cursor-pointer"
               >
                 Cancel
