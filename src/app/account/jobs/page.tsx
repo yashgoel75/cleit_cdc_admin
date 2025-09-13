@@ -300,6 +300,7 @@ export default function Jobs() {
     }
   };
 
+  const [showList, setShowList] = useState(false);
   return (
     <>
       <Header />
@@ -907,18 +908,20 @@ export default function Jobs() {
                     </div>
                   </div>
                 )}
-                <div className="mt-5 justify-between flex">
-                  <div className="bg-green-100 px-4 py-1 rounded-full text-green-800 text-xs font-medium inline-flex items-center">
+                <div className="flex gap-3 pt-2">
+                  <div className="bg-green-100 flex-1 text-green-800 hover:bg-green-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center cursor-pointer">
                     <button
                       onClick={() => copyJobLink(job._id!)}
-                      className="w-25 cursor-pointer hover:text-green-900 transition-colors"
+                      className="cursor-pointer"
                     >
                       {isCopied ? "Copied" : "Copy Job Link"}
                     </button>
                   </div>
+                </div>
+                <div className="text-center flex justify-center pt-4">
                   <div className="bg-blue-100 px-4 py-1 rounded-full text-blue-800 text-xs font-medium inline-flex items-center">
-                    <Link href={`/account/jobs/${job._id}`}>
-                      View Students Applied
+                    <Link href={`/account/jobs/${job._id}`} onClick={() => setShowList(true)}>
+                      {showList ? "Loading..." : "View Students Applied"}
                     </Link>
                   </div>
                 </div>
