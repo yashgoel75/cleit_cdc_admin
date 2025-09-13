@@ -8,6 +8,7 @@ import logo from "@/assets/cleit.png";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getFirebaseToken } from "@/utils";
 
 export default function Header() {
   const pathname = usePathname();
@@ -34,8 +35,15 @@ export default function Header() {
 
   const fetchUserName = async (email: string) => {
     try {
+      const token = await getFirebaseToken();
       const response = await fetch(
-        `/api/admin?email=${encodeURIComponent(email)}`
+        `/api/admin?email=${encodeURIComponent(email)}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const data = await response.json();
       if (!response.ok)
@@ -75,8 +83,7 @@ export default function Header() {
   const UserMenu = () => (
     <div className="flex items-center gap-5">
       <nav className="font-medium text-lg">
-        <ul className="flex gap-4">
-        </ul>
+        <ul className="flex gap-4"></ul>
       </nav>
       {isLogoutConfirmationMessage ? (
         <>
@@ -260,7 +267,7 @@ export default function Header() {
           </button>
         </div>
       </header>
-      {(!isMobile && user) && (
+      {!isMobile && user && (
         <div className="hidden lg:flex w-full border-b border-gray-300 py-2 justify-center">
           <nav className="flex gap-2 font-medium">
             {user ? (

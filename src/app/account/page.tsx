@@ -11,6 +11,7 @@ import Image from "next/image";
 import linkedin from "@/assets/LinkedIn.png";
 import Github from "@/assets/Github.png";
 import Leetcode from "@/assets/Leetcode.png";
+import { getFirebaseToken } from "@/utils";
 
 interface UserProfile {
   name: string;
@@ -67,7 +68,13 @@ export default function Account() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin?email=${encodeURIComponent(email)}`);
+      const token = await getFirebaseToken();
+      const res = await fetch(`/api/admin?email=${encodeURIComponent(email)}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to fetch user data.");
@@ -117,9 +124,13 @@ export default function Account() {
     setIsUpdating(true);
     setError(null);
     try {
+      const token = await getFirebaseToken();
       const res = await fetch("/api/admin", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           email: currentUser.email,
           updates: { ...formData },
@@ -140,7 +151,6 @@ export default function Account() {
       setIsUpdating(false);
     }
   };
-
 
   if (loading) {
     return (

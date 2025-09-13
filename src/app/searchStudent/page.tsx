@@ -10,6 +10,7 @@ import Github from "@/assets/Github.png";
 import Leetcode from "@/assets/Leetcode.png";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { getFirebaseToken } from "@/utils";
 
 interface UserProfile {
   name: string;
@@ -121,7 +122,13 @@ export default function AdminUserSearch() {
     const fetchStudents = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/getAllStudents");
+        const token = await getFirebaseToken();
+        const res = await fetch("/api/getAllStudents", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error("Failed to fetch students.");
         const data = await res.json();
         setAllStudents(data.students || []);

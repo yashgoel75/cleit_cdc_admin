@@ -7,6 +7,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { getFirebaseToken } from "@/utils";
 
 const QuillEditor = dynamic(() => import("@/components/TestEditor"), {
   ssr: false,
@@ -52,8 +53,15 @@ export default function Tests() {
 
   const fetchTests = async (email: string | null | undefined) => {
     try {
+      const token = await getFirebaseToken();
       const res = await fetch(
-        `/api/tests?email=${encodeURIComponent(email || "")}`
+        `/api/tests?email=${encodeURIComponent(email || "")}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch tests");
@@ -131,12 +139,12 @@ export default function Tests() {
     const PdfformData = new FormData();
     const publicId = `test_pdf_${Date.now()}`;
     const folder = "test_pdfs";
-
+    const token = await getFirebaseToken();
     const signatureRes = await fetch("/api/signtest", {
       method: "POST",
       headers: {
-        // Authorization: `Bearer ${await currentUser.getIdToken()}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ folder, public_id: publicId }),
     });
@@ -154,6 +162,10 @@ export default function Tests() {
       `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
       {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: PdfformData,
       }
     );
@@ -203,10 +215,13 @@ export default function Tests() {
         : { newTest: dataToSend, adminEmail: currentUser.email };
 
       const method = editingId ? "PATCH" : "POST";
-
+      const token = await getFirebaseToken();
       const res = await fetch("/api/tests", {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(body),
       });
 
@@ -228,9 +243,13 @@ export default function Tests() {
 
   const handleDelete = async (id: string) => {
     if (!currentUser) return;
+    const token = await getFirebaseToken();
     const res = await fetch("/api/tests", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ testId: id, adminEmail: currentUser.email }),
     });
     if (res.ok) fetchTests(currentUser.email);
@@ -592,9 +611,24 @@ export default function Tests() {
                             className="flex items-center text-gray-600 text-sm"
                           >
                             <span className="font-medium">
-                              {field.fieldName.startsWith("Test PDF") ? "Related Document" : field.fieldName}:
+                              {field.fieldName.startsWith("Test PDF")
+                                ? "Related Document"
+                                : field.fieldName}
+                              :
                             </span>
-                            <span className="ml-2 wrap">{field.fieldValue.startsWith("https://res.cloudinary.com") ? <a target="_blank" href={field.fieldValue}><span className="underline text-indigo-600">View PDF</span></a> : field.fieldValue}</span>
+                            <span className="ml-2 wrap">
+                              {field.fieldValue.startsWith(
+                                "https://res.cloudinary.com"
+                              ) ? (
+                                <a target="_blank" href={field.fieldValue}>
+                                  <span className="underline text-indigo-600">
+                                    View PDF
+                                  </span>
+                                </a>
+                              ) : (
+                                field.fieldValue
+                              )}
+                            </span>
                           </div>
                         ))}
                       </div>

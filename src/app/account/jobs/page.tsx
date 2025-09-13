@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { set } from "mongoose";
+import { getFirebaseToken } from "@/utils";
 
 const QuillEditor = dynamic(() => import("@/components/TestEditor"), {
   ssr: false,
@@ -63,8 +64,15 @@ export default function Jobs() {
 
   const fetchJobs = async (email: string | null | undefined) => {
     try {
+      const token = await getFirebaseToken();
       const res = await fetch(
-        `/api/jobs?email=${encodeURIComponent(email || "")}`
+        `/api/jobs?email=${encodeURIComponent(email || "")}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch jobs");
@@ -144,11 +152,12 @@ export default function Jobs() {
     const PdfformData = new FormData();
     const publicId = `job_pdf_${Date.now()}`;
     const folder = "job_pdfs";
-
+    const token = await getFirebaseToken();
     const signatureRes = await fetch("/api/signtest", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ folder, public_id: publicId }),
     });
@@ -166,6 +175,10 @@ export default function Jobs() {
       `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
       {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: PdfformData,
       }
     );
@@ -215,10 +228,13 @@ export default function Jobs() {
         : { newJob: dataToSend, adminEmail: currentUser.email };
 
       const method = editingId ? "PATCH" : "POST";
-
+      const token = await getFirebaseToken();
       const res = await fetch("/api/jobs", {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(body),
       });
 
@@ -238,9 +254,13 @@ export default function Jobs() {
 
   const handleDelete = async (id: string) => {
     if (!currentUser) return;
+    const token = await getFirebaseToken();
     const res = await fetch("/api/jobs", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ jobId: id, adminEmail: currentUser.email }),
     });
     if (res.ok) fetchJobs(currentUser.email);
@@ -920,7 +940,10 @@ export default function Jobs() {
                 </div>
                 <div className="text-center flex justify-center pt-4">
                   <div className="bg-blue-100 px-4 py-1 rounded-full text-blue-800 text-xs font-medium inline-flex items-center">
-                    <Link href={`/account/jobs/${job._id}`} onClick={() => setShowList(true)}>
+                    <Link
+                      href={`/account/jobs/${job._id}`}
+                      onClick={() => setShowList(true)}
+                    >
                       {showList ? "Loading..." : "View Students Applied"}
                     </Link>
                   </div>

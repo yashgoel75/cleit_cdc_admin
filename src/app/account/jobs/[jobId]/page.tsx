@@ -10,6 +10,7 @@ import Github from "@/assets/Github.png";
 import Leetcode from "@/assets/Leetcode.png";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { getFirebaseToken } from "@/utils";
 
 interface UserProfile {
   name: string;
@@ -125,8 +126,14 @@ export default function JobStudentsPage() {
   useEffect(() => {
     const fetchStudents = async () => {
       setLoading(true);
+      const token = await getFirebaseToken();
       try {
-        const res = await fetch(`/api/getJobStudents/${jobId}/students`);
+        const res = await fetch(`/api/getJobStudents/${jobId}/students`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error("Failed to fetch job students.");
         const data = await res.json();
 
@@ -178,7 +185,7 @@ export default function JobStudentsPage() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-  
+
   useEffect(() => {
     if (searchValue) setError(null);
   }, [searchValue]);
