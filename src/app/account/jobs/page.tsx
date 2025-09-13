@@ -7,6 +7,8 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { set } from "mongoose";
 
 const QuillEditor = dynamic(() => import("@/components/TestEditor"), {
   ssr: false,
@@ -23,6 +25,7 @@ export default function Jobs() {
     deadline: string;
     pdfUrl: string;
     linkToApply: string;
+    studentsApplied?: string[];
     extraFields?: { fieldName: string; fieldValue: string }[];
     inputFields?: {
       fieldName: string;
@@ -269,6 +272,34 @@ export default function Jobs() {
     setFormData({ ...formData, inputFields: newFields });
   };
 
+  const [isCopied, setIsCopied] = useState(false);
+  const copyJobLink = async (jobId: string) => {
+    const jobUrl = `https://cdc.cleit.in/account/jobs/${jobId}`;
+
+    try {
+      await navigator.clipboard.writeText(jobUrl);
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 1500);
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      const textArea = document.createElement("textarea");
+      textArea.value = jobUrl;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        alert("Job link copied to clipboard!");
+      } catch (fallbackErr) {
+        console.error("Fallback copy failed: ", fallbackErr);
+        alert("Failed to copy link. Please copy manually: " + jobUrl);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -490,9 +521,9 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">
-                      No additional fields added. Click &quot;Add Field&quot; to include
-                      custom information like salary, experience level, benefits,
-                      etc.
+                      No additional fields added. Click &quot;Add Field&quot; to
+                      include custom information like salary, experience level,
+                      benefits, etc.
                     </p>
                   )}
                 </div>
@@ -610,9 +641,9 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">
-                      No input fields defined. Click &quot;Add Input Field&quot; to let
-                      students provide custom information like resume links,
-                      portfolio, preferences, etc.
+                      No input fields defined. Click &quot;Add Input Field&quot;
+                      to let students provide custom information like resume
+                      links, portfolio, preferences, etc.
                     </p>
                   )}
                 </div>
@@ -626,7 +657,7 @@ export default function Jobs() {
                     </span>
                     Job Description
                   </h4>
-                  
+
                   <div className="mb-5 bg-gradient-to-br from-green-50 to-teal-50 p-6 rounded-xl border-2 border-green-100">
                     <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
                       <span className="bg-green-100 p-2 rounded-lg mr-3">
@@ -690,7 +721,11 @@ export default function Jobs() {
                     : "bg-green-500 hover:bg-green-600"
                 } text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center cursor-pointer`}
               >
-                {isSubmitting ? "Posting..." : editingId ? "Update Job" : "Post Job"}
+                {isSubmitting
+                  ? "Posting..."
+                  : editingId
+                  ? "Update Job"
+                  : "Post Job"}
               </button>
               <button
                 onClick={() => {
@@ -752,7 +787,6 @@ export default function Jobs() {
                     Job
                   </div>
                 </div>
-
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center text-gray-600">
                     <span className="font-medium">Location:</span>
@@ -798,7 +832,17 @@ export default function Jobs() {
                             <span className="font-medium">
                               {field.fieldName}:
                             </span>
-                            <span className="ml-2">{field.fieldValue.startsWith("https://res.cloudinary.com/") ? <a href={field.fieldValue} target="_blank">View PDF</a> : field.fieldValue}</span>
+                            <span className="ml-2">
+                              {field.fieldValue.startsWith(
+                                "https://res.cloudinary.com/"
+                              ) ? (
+                                <a href={field.fieldValue} target="_blank">
+                                  View PDF
+                                </a>
+                              ) : (
+                                field.fieldValue
+                              )}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -821,7 +865,6 @@ export default function Jobs() {
                     </div>
                   )}
                 </div>
-
                 <div className="mb-4">
                   <div className="flex items-center mb-2">
                     <span className="font-semibold text-gray-700">
@@ -835,7 +878,6 @@ export default function Jobs() {
                     />
                   </div>
                 </div>
-
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
@@ -857,7 +899,29 @@ export default function Jobs() {
                     Delete
                   </button>
                 </div>
-
+                {job.studentsApplied && job.studentsApplied.length > 0 && (
+                  <div className="mt-4 text-center">
+                    <div className="bg-orange-100 px-4 py-1 rounded-full text-orange-800 text-xs font-medium inline-flex items-center">
+                      {job.studentsApplied.length} student
+                      {job.studentsApplied.length !== 1 ? "s" : ""} applied
+                    </div>
+                  </div>
+                )}
+                <div className="mt-5 justify-between flex">
+                  <div className="bg-green-100 px-4 py-1 rounded-full text-green-800 text-xs font-medium inline-flex items-center">
+                    <button
+                      onClick={() => copyJobLink(job._id!)}
+                      className="w-25 cursor-pointer hover:text-green-900 transition-colors"
+                    >
+                      {isCopied ? "Copied" : "Copy Job Link"}
+                    </button>
+                  </div>
+                  <div className="bg-blue-100 px-4 py-1 rounded-full text-blue-800 text-xs font-medium inline-flex items-center">
+                    <Link href={`/account/jobs/${job._id}`}>
+                      View Students Applied
+                    </Link>
+                  </div>
+                </div>
                 {jobIdToDelete === job._id && (
                   <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-red-800 font-medium mb-3 flex items-center">
