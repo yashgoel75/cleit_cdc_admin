@@ -50,7 +50,7 @@ export default function AdminHome() {
 
           <div className="mt-8">
             <a
-              href={user ? "/admin/dashboard" : "/auth/login"}
+              href={user ? "/account" : "/auth/login"}
               className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition transform hover:scale-105"
             >
               {user ? "Go to Dashboard" : "Admin Login"}
