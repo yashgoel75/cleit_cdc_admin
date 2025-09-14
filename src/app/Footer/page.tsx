@@ -21,9 +21,9 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold mb-3">About Us</h3>
           <p className="text-sm text-gray-400">
-            A unified platform for all college societies — explore, wishlist,
-            track events, set reminders, and never miss an opportunity to
-            participate.
+            A centralized platform to manage all career opportunities — post
+            jobs, internships, placement drives, and skill tests, while tracking
+            applications and deadlines efficiently.
           </p>
         </div>
 
@@ -48,33 +48,27 @@ export default function Footer() {
             >
               Our Team
             </li>
-            <li
-              className="hover:cursor-pointer"
-              onClick={() => router.push("/releasenotes")}
-            >
-              Release Notes
-            </li>
           </ul>
         </div>
 
         <div>
           <h3 className="text-lg font-semibold mb-3">Connect</h3>
           <ul className="space-y-2 text-sm">
-            <li>
+            {/* <li>
               <a
                 href="mailto:connect@cleit.in"
                 className="hover:text-gray-700 transition"
               >
                 connect@cleit.in
               </a>
-            </li>
+            </li> */}
             <li
               className="hover:cursor-pointer"
               onClick={() => router.push("/contact")}
             >
               Contact Us
             </li>
-            <li>
+            {/* <li>
               <a
                 href="https://twitter.com/"
                 target="_blank"
@@ -83,10 +77,10 @@ export default function Footer() {
               >
                 Instagram
               </a>
-            </li>
+            </li> */}
             <li>
               <a
-                href="https://linkedin.com/"
+                href="https://linkedin.com/company/cleit"
                 target="_blank"
                 rel="noreferrer"
                 className="hover:text-gray-700 transition"
