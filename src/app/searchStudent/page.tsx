@@ -254,12 +254,12 @@ export default function AdminUserSearch() {
             placeholder="Search Student"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="md:text-lg w-46 md:w-96 border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+            className="md:text-lg w-46 md:w-96 border border-gray-300 px-3 lg:pl-5 py-2 rounded-md lg:rounded-full focus:outline-none focus:ring focus:ring-indigo-200"
           />
           {
             <button
               onClick={() => setSearchValue("")}
-              className="cursor-pointer md:text-lg px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-md"
+              className="cursor-pointer md:text-lg px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-md lg:rounded-full"
               aria-label="Clear search"
             >
               {isMobile ? (
@@ -279,7 +279,7 @@ export default function AdminUserSearch() {
           }
           <button
             onClick={() => setIsRefresh(!isRefresh)}
-            className="cursor-pointer md:text-lg px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-md"
+            className="cursor-pointer md:text-lg px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-md lg:rounded-full"
             aria-label="Clear search"
           >
             {isMobile ? (
