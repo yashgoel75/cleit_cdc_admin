@@ -59,7 +59,7 @@ export default function Jobs() {
     inputFields: [],
   });
 
-  const eligibilityBatches = ["2022–26", "2023–27", "2024–28", "2025–29"];
+  const eligibilityBatches = ["2022–2026", "2023–2027", "2024–2028", "2025–2029"];
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
