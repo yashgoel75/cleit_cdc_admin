@@ -8,7 +8,6 @@ import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { set } from "mongoose";
 import { getFirebaseToken } from "@/utils";
 
 const QuillEditor = dynamic(() => import("@/components/TestEditor"), {
@@ -26,6 +25,7 @@ export default function Jobs() {
     deadline: string;
     pdfUrl: string;
     linkToApply: string;
+    eligibility?: string[];
     studentsApplied?: string[];
     extraFields?: { fieldName: string; fieldValue: string }[];
     inputFields?: {
@@ -48,6 +48,7 @@ export default function Jobs() {
   const [formData, setFormData] = useState<Job>({
     company: "",
     role: "",
+    eligibility: [],
     type: "Open Opportunity",
     location: "",
     description: "",
@@ -57,6 +58,9 @@ export default function Jobs() {
     extraFields: [],
     inputFields: [],
   });
+
+  const eligibilityBatches = ["2022–26", "2023–27", "2024–28", "2025–29"];
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [jobIdToDelete, setJobIdToDelete] = useState<string | null>(null);
@@ -136,6 +140,7 @@ export default function Jobs() {
       type: "Open Opportunity",
       location: "",
       description: "",
+      eligibility: [],
       deadline: "",
       linkToApply: "",
       pdfUrl: "",
@@ -454,6 +459,51 @@ export default function Jobs() {
                         }
                         className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 bg-white shadow-sm hover:shadow-md"
                       />
+                    </div>
+
+                    <div className="group">
+                      <label
+                        htmlFor="eligibility"
+                        className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                      >
+                        Eligibility
+                      </label>
+                      <div className="space-y-2">
+                        {eligibilityBatches.map((batch) => (
+                          <label
+                            key={batch}
+                            className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              value={batch}
+                              checked={formData.eligibility?.includes(batch)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({
+                                    ...formData,
+                                    eligibility: [
+                                      ...(formData.eligibility ?? []),
+                                      batch,
+                                    ],
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    eligibility: formData.eligibility?.filter(
+                                      (el) => el !== batch
+                                    ),
+                                  });
+                                }
+                              }}
+                              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-700">
+                              {batch}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="group">
