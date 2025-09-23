@@ -64,6 +64,7 @@ export default function Jobs() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [jobIdToDelete, setJobIdToDelete] = useState<string | null>(null);
+  const [copyJobId, setCopyJobId] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchJobs = async (email: string | null | undefined) => {
@@ -303,6 +304,7 @@ export default function Jobs() {
 
     try {
       await navigator.clipboard.writeText(jobUrl);
+      setCopyJobId(jobId);
       setIsCopied(true);
       setTimeout(() => {
         setIsCopied(false);
@@ -979,12 +981,11 @@ export default function Jobs() {
                   </div>
                 )}
                 <div className="flex gap-3 pt-2">
-                  <div className="bg-green-100 flex-1 text-green-800 hover:bg-green-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center cursor-pointer">
+                  <div onClick={() => copyJobLink(job._id!)} className="bg-green-100 flex-1 text-green-800 hover:bg-green-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center cursor-pointer">
                     <button
-                      onClick={() => copyJobLink(job._id!)}
                       className="cursor-pointer"
                     >
-                      {isCopied ? "Copied" : "Copy Job Link"}
+                      {isCopied && copyJobId == job._id ? "Copied" : "Copy Job Link"}
                     </button>
                   </div>
                 </div>
