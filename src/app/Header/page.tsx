@@ -169,6 +169,12 @@ export default function Header() {
                   Hackathons
                 </p>
                 <p
+                  onClick={() => router.replace("/webinars")}
+                  className="cursor-pointer hover:underline"
+                >
+                  Webinars
+                </p>
+                <p
                   onClick={() => router.replace("/searchStudent")}
                   className="cursor-pointer hover:underline"
                 >
@@ -303,6 +309,17 @@ export default function Header() {
                 }`}
               >
                 Hackathons/Tests
+              </button>
+            </Link>
+            <Link href={"/account/webinars"}>
+              <button
+                className={`cursor-pointer px-4 py-1 rounded-md transition ${
+                  pathname.endsWith("/webinars")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-700 hover:bg-indigo-50"
+                }`}
+              >
+                Webinars
               </button>
             </Link>
             <Link href={"/searchStudent"}>
