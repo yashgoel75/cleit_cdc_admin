@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo, useDeferredValue, useRef } from "react";
 import { useParams } from "next/navigation";
-import Header from "@/app/Header/page";
-import Footer from "@/app/Footer/page";
 import Image from "next/image";
 import linkedin from "@/assets/LinkedIn.png";
 import Github from "@/assets/Github.png";
@@ -11,42 +9,34 @@ import Leetcode from "@/assets/Leetcode.png";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { getFirebaseToken } from "@/utils";
-import "../page.css"
+import Header from "@/app/Header/page";
+import Footer from "@/app/Footer/page";
+import "../../page.css"
 
 interface UserProfile {
-  name: string;
-  username: string;
-  enrollmentNumber: string;
-  collegeEmail: string;
-  personalEmail: string;
-  phone: number;
-  department: string;
-  tenthPercentage: number;
-  twelfthPercentage: number;
-  collegeGPA: number;
-  batchStart: number;
-  batchEnd: number;
-  linkedin: string;
-  github: string;
-  leetcode: string;
-  status: string;
-  resume: string;
-}
-
-interface ApplicationDetails {
-  email: string;
-  responses: { fieldName: string; value: string | number | boolean }[];
-  appliedAt: string;
-}
-
-interface StudentData {
-  applicationDetails: ApplicationDetails;
-  userDetails: UserProfile | null;
+  name?: string;
+  username?: string;
+  enrollmentNumber?: string;
+  collegeEmail?: string;
+  personalEmail?: string;
+  phone?: number;
+  department?: string;
+  tenthPercentage?: number;
+  twelfthPercentage?: number;
+  collegeGPA?: number;
+  batchStart?: number;
+  batchEnd?: number;
+  linkedin?: string;
+  github?: string;
+  leetcode?: string;
+  status?: string;
+  resume?: string;
+  email?: string;
 }
 
 async function exportToExcelGrouped(
   groupedStudents: Record<string, Record<string, UserProfile[]>>,
-  fileName: string = "job_students_grouped.xlsx"
+  fileName: string = "not_interested_students_grouped.xlsx"
 ) {
   const workbook = new ExcelJS.Workbook();
 
@@ -96,7 +86,7 @@ async function exportToExcelGrouped(
   saveAs(new Blob([buffer]), fileName);
 }
 
-export default function JobStudentsPage() {
+export default function NotInterestedStudentsPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const [searchValue, setSearchValue] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -106,7 +96,9 @@ export default function JobStudentsPage() {
   const mainRef = useRef<HTMLElement | null>(null);
   const [isRefresh, setIsRefresh] = useState(false);
 
-  function getStudentYear(batchEnd: number, cutoffMonth = 6): string {
+  function getStudentYear(batchEnd?: number, cutoffMonth = 6): string {
+    if (!batchEnd) return "Unknown";
+    
     const now = new Date();
     const academicEndYear =
       now.getMonth() >= cutoffMonth ? now.getFullYear() + 1 : now.getFullYear();
@@ -129,23 +121,21 @@ export default function JobStudentsPage() {
       setLoading(true);
       const token = await getFirebaseToken();
       try {
-        const res = await fetch(`/api/getJobStudents/${jobId}/students`, {
+        const res = await fetch(`/api/getJobStudents/getNotInterestedStudents/${jobId}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         });
-        if (!res.ok) throw new Error("Failed to fetch job students.");
+        if (!res.ok) throw new Error("Failed to fetch not interested students.");
         const data = await res.json();
 
-        const students: UserProfile[] = data.students
-          .map((s: StudentData) => s.userDetails)
-          .filter(Boolean);
+        const students: UserProfile[] = data.students || [];
 
         setAllStudents(students);
         setError(null);
       } catch (err) {
-        setError("Failed to fetch job students.");
+        setError("Failed to fetch not interested students.");
       } finally {
         setLoading(false);
       }
@@ -164,11 +154,13 @@ export default function JobStudentsPage() {
         s.name,
         s.username,
         s.collegeEmail,
+        s.personalEmail,
+        s.email,
         s.department,
         s.enrollmentNumber,
-        String(s.phone),
-        String(s.batchStart),
-        String(s.batchEnd),
+        String(s.phone || ""),
+        String(s.batchStart || ""),
+        String(s.batchEnd || ""),
         year,
       ]
         .filter(Boolean)
@@ -179,9 +171,9 @@ export default function JobStudentsPage() {
     });
   }, [allStudents, deferredQuery]);
 
-  const [isMobile, setISMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setISMobile(window.innerWidth < 768);
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -194,7 +186,10 @@ export default function JobStudentsPage() {
   useEffect(() => {
     if (
       selectedUser &&
-      !filteredStudents.some((s) => s.username === selectedUser.username)
+      !filteredStudents.some((s) => 
+        (s.username && s.username === selectedUser.username) ||
+        (s.email && s.email === selectedUser.email)
+      )
     ) {
       setSelectedUser(null);
     }
@@ -211,9 +206,10 @@ export default function JobStudentsPage() {
   const groupedStudents = useMemo(() => {
     return allStudents.reduce((acc, student) => {
       const year = getStudentYear(student.batchEnd);
+      const dept = student.department || "No Department";
       if (!acc[year]) acc[year] = {};
-      if (!acc[year][student.department]) acc[year][student.department] = [];
-      acc[year][student.department].push(student);
+      if (!acc[year][dept]) acc[year][dept] = [];
+      acc[year][dept].push(student);
       return acc;
     }, {} as Record<string, Record<string, UserProfile[]>>);
   }, [allStudents]);
@@ -221,9 +217,10 @@ export default function JobStudentsPage() {
   const groupedFilteredStudents = useMemo(() => {
     return filteredStudents.reduce((acc, student) => {
       const year = getStudentYear(student.batchEnd);
+      const dept = student.department || "No Department";
       if (!acc[year]) acc[year] = {};
-      if (!acc[year][student.department]) acc[year][student.department] = [];
-      acc[year][student.department].push(student);
+      if (!acc[year][dept]) acc[year][dept] = [];
+      acc[year][dept].push(student);
       return acc;
     }, {} as Record<string, Record<string, UserProfile[]>>);
   }, [filteredStudents]);
@@ -257,7 +254,7 @@ export default function JobStudentsPage() {
         className="w-[95%] min-h-[85vh] lg:w-full max-w-6xl mx-auto py-10 md:py-16 px-4"
       >
         <h2 className="text-4xl font-extrabold text-center text-gray-900 mb-8">
-          Job Applicants
+          Not Interested Students
         </h2>
 
         <div className="flex justify-center gap-2 mb-6">
@@ -311,7 +308,7 @@ export default function JobStudentsPage() {
             onClick={() =>
               exportToExcelGrouped(
                 groupedStudents,
-                `Job_${jobId}_Students.xlsx`
+                `Job_${jobId}_NotInterested_Students.xlsx`
               )
             }
             className="px-4 py-2 bg-indigo-500 text-white rounded-md shadow hover:bg-indigo-700 cursor-pointer"
@@ -328,7 +325,12 @@ export default function JobStudentsPage() {
         )}
         {!loading && !error && searchValue && filteredStudents.length === 0 && (
           <p className="text-center text-gray-700 mb-4">
-            No matches for “{searchValue}”.
+            No matches for &quot;{searchValue}&quot;.
+          </p>
+        )}
+        {!loading && !error && allStudents.length === 0 && (
+          <p className="text-center text-gray-700 mb-4">
+            No students have marked themselves as not interested yet.
           </p>
         )}
 
@@ -336,7 +338,7 @@ export default function JobStudentsPage() {
         {selectedUser && (
           <div className="bg-white p-6 rounded-xl shadow-md space-y-6 mb-8">
             <h3 className="text-3xl font-bold text-center text-gray-800 mb-4">
-              {selectedUser.name}
+              {selectedUser.name || selectedUser.email || "Unknown Student"}
             </h3>
             {selectedUser.resume && (
               <div className="flex items-center gap-4 mb-4">
@@ -352,48 +354,80 @@ export default function JobStudentsPage() {
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-              <div>
-                <p className="font-medium text-gray-700">Username</p>
-                <p>{selectedUser.username}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Enrollment Number</p>
-                <p>{selectedUser.enrollmentNumber}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">College Email</p>
-                <p>{selectedUser.collegeEmail}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Phone</p>
-                <p>{selectedUser.phone}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Department</p>
-                <p>{selectedUser.department}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">10th %</p>
-                <p>{selectedUser.tenthPercentage}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">12th %</p>
-                <p>{selectedUser.twelfthPercentage}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">GPA</p>
-                <p>{selectedUser.collegeGPA}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Batch</p>
-                <p>
-                  {selectedUser.batchStart} - {selectedUser.batchEnd}
-                </p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Status</p>
-                <p>{selectedUser.status}</p>
-              </div>
+              {selectedUser.username && (
+                <div>
+                  <p className="font-medium text-gray-700">Username</p>
+                  <p>{selectedUser.username}</p>
+                </div>
+              )}
+              {selectedUser.enrollmentNumber && (
+                <div>
+                  <p className="font-medium text-gray-700">Enrollment Number</p>
+                  <p>{selectedUser.enrollmentNumber}</p>
+                </div>
+              )}
+              {selectedUser.collegeEmail && (
+                <div>
+                  <p className="font-medium text-gray-700">College Email</p>
+                  <p>{selectedUser.collegeEmail}</p>
+                </div>
+              )}
+              {selectedUser.personalEmail && (
+                <div>
+                  <p className="font-medium text-gray-700">Personal Email</p>
+                  <p>{selectedUser.personalEmail}</p>
+                </div>
+              )}
+              {selectedUser.email && !selectedUser.collegeEmail && !selectedUser.personalEmail && (
+                <div>
+                  <p className="font-medium text-gray-700">Email</p>
+                  <p>{selectedUser.email}</p>
+                </div>
+              )}
+              {selectedUser.phone && (
+                <div>
+                  <p className="font-medium text-gray-700">Phone</p>
+                  <p>{selectedUser.phone}</p>
+                </div>
+              )}
+              {selectedUser.department && (
+                <div>
+                  <p className="font-medium text-gray-700">Department</p>
+                  <p>{selectedUser.department}</p>
+                </div>
+              )}
+              {selectedUser.tenthPercentage !== undefined && (
+                <div>
+                  <p className="font-medium text-gray-700">10th %</p>
+                  <p>{selectedUser.tenthPercentage}</p>
+                </div>
+              )}
+              {selectedUser.twelfthPercentage !== undefined && (
+                <div>
+                  <p className="font-medium text-gray-700">12th %</p>
+                  <p>{selectedUser.twelfthPercentage}</p>
+                </div>
+              )}
+              {selectedUser.collegeGPA !== undefined && (
+                <div>
+                  <p className="font-medium text-gray-700">GPA</p>
+                  <p>{selectedUser.collegeGPA}</p>
+                </div>
+              )}
+              {selectedUser.batchStart && selectedUser.batchEnd && (
+                <div>
+                  <p className="font-medium text-gray-700">Batch</p>
+                  <p>
+                    {selectedUser.batchStart} - {selectedUser.batchEnd}
+                  </p>
+                </div>
+              )}
+              {selectedUser.status && (
+                <div>
+                  <p className="font-medium text-gray-700">Status</p>
+                  <p>{selectedUser.status}</p>
+                </div>
+              )}
             </div>
             <div className="mt-6 flex flex-col gap-3">
               {selectedUser.linkedin && (
@@ -500,30 +534,40 @@ export default function JobStudentsPage() {
                             <ul className="md:pl-4 mt-2 space-y-3">
                               {students
                                 .slice()
-                                .sort(
-                                  (a, b) =>
-                                    Number(a.enrollmentNumber) -
-                                    Number(b.enrollmentNumber)
-                                )
-                                .map((s) => (
+                                .sort((a, b) => {
+                                  const aNum = Number(a.enrollmentNumber);
+                                  const bNum = Number(b.enrollmentNumber);
+                                  if (!isNaN(aNum) && !isNaN(bNum)) {
+                                    return aNum - bNum;
+                                  }
+                                  return 0;
+                                })
+                                .map((s, idx) => (
                                   <li
-                                    key={s.username}
+                                    key={s.username || s.email || idx}
                                     onClick={() => setSelectedUser(s)}
                                     className="border border-gray-100 p-3 rounded-md bg-white shadow cursor-pointer hover:bg-indigo-50"
                                     title="Click to view profile"
                                   >
                                     <p className="font-medium">
-                                      {s.name} ({s.username})
+                                      {s.name || s.email || "Unknown"} 
+                                      {s.username && ` (${s.username})`}
                                     </p>
-                                    <p className="text-sm text-gray-600">
-                                      {s.collegeEmail}
-                                    </p>
-                                    <p className="text-sm">
-                                      Enrollment Number: {s.enrollmentNumber}
-                                    </p>
-                                    <p className="text-sm">
-                                      Status: {s.status}
-                                    </p>
+                                    {s.collegeEmail && (
+                                      <p className="text-sm text-gray-600">
+                                        {s.collegeEmail}
+                                      </p>
+                                    )}
+                                    {s.enrollmentNumber && (
+                                      <p className="text-sm">
+                                        Enrollment Number: {s.enrollmentNumber}
+                                      </p>
+                                    )}
+                                    {s.status && (
+                                      <p className="text-sm">
+                                        Status: {s.status}
+                                      </p>
+                                    )}
                                   </li>
                                 ))}
                             </ul>

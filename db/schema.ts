@@ -14,6 +14,7 @@ const job = new Schema({
   linkToApply: String,
   pdfUrl: String,
   studentsApplied: [String],
+  studentsNotInterested: [String],
   extraFields: [{
     fieldName: {
       type: String,

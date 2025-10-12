@@ -27,6 +27,7 @@ export default function Jobs() {
     linkToApply: string;
     eligibility?: string[];
     studentsApplied?: string[];
+    studentsNotInterested?: string[];
     extraFields?: { fieldName: string; fieldValue: string }[];
     inputFields?: {
       fieldName: string;
@@ -989,13 +990,21 @@ export default function Jobs() {
                     </button>
                   </div>
                 </div>
-                <div className="text-center flex justify-center pt-4">
+                <div className="text-center flex justify-between pt-4">
+                  <div className="bg-blue-100 px-4 py-1 rounded-full text-blue-800 text-xs font-medium inline-flex items-center">
+                    <Link
+                      href={`/account/jobs/notInterested/${job._id}`}
+                      onClick={() => setShowList(true)}
+                    >
+                      {showList ? "Loading..." : "Not Interested Students"}
+                    </Link>
+                  </div>
                   <div className="bg-blue-100 px-4 py-1 rounded-full text-blue-800 text-xs font-medium inline-flex items-center">
                     <Link
                       href={`/account/jobs/${job._id}`}
                       onClick={() => setShowList(true)}
                     >
-                      {showList ? "Loading..." : "View Students Applied"}
+                      {showList ? "Loading..." : "Students Applied"}
                     </Link>
                   </div>
                 </div>
