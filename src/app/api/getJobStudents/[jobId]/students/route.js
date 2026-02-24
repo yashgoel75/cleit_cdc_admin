@@ -9,15 +9,15 @@ export async function GET(req, { params }) {
 
   try {
     await register();
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing token" }, { status: 401 });
-    }
-    const token = authHeader.split(" ")[1];
-    const decodedToken = await verifyFirebaseToken(token);
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // const authHeader = req.headers.get("Authorization");
+    // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    //   return NextResponse.json({ error: "Missing token" }, { status: 401 });
+    // }
+    // const token = authHeader.split(" ")[1];
+    // const decodedToken = await verifyFirebaseToken(token);
+    // if (!decodedToken) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
 
     if (!mongoose.Types.ObjectId.isValid(jobId)) {
       return NextResponse.json({ error: "Invalid jobId" }, { status: 400 });
