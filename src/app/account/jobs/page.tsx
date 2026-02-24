@@ -164,6 +164,7 @@ export default function Jobs() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ folder, public_id: publicId }),
     });
@@ -183,7 +184,6 @@ export default function Jobs() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: PdfformData,
       }
