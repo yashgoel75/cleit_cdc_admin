@@ -300,7 +300,7 @@ export default function Jobs() {
 
   const [isCopied, setIsCopied] = useState(false);
   const copyJobLink = async (jobId: string) => {
-    const jobUrl = `https://cdc.cleit.in/account/jobs/${jobId}`;
+    const jobUrl = `https://cleit.in/jobs/${jobId}`;
 
     try {
       await navigator.clipboard.writeText(jobUrl);
