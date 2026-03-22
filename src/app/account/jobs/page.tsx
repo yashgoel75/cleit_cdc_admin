@@ -169,7 +169,12 @@ export default function Jobs() {
       body: JSON.stringify({ folder, public_id: publicId }),
     });
 
-    const { signature, timestamp, apiKey } = await signatureRes.json();
+    const signatureData = await signatureRes.json();
+    if (!signatureRes.ok) {
+      throw new Error(signatureData.error || "Failed to sign PDF upload");
+    }
+
+    const { signature, timestamp, apiKey } = signatureData;
 
     PdfformData.append("file", pdfFile);
     PdfformData.append("api_key", apiKey);
@@ -182,15 +187,19 @@ export default function Jobs() {
       `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: PdfformData,
       }
     );
 
     const cloudData = await cloudRes.json();
+    if (!cloudRes.ok) {
+      throw new Error(
+        cloudData?.error?.message || "Failed to upload PDF to Cloudinary"
+      );
+    }
+
     const url = cloudData.secure_url;
+    setPdfUrl(url || "");
     setFormData((prev) => (prev ? { ...prev, pdfUrl: url } : prev));
     return typeof url === "string" ? url : "";
   };
@@ -244,15 +253,22 @@ export default function Jobs() {
         body: JSON.stringify(body),
       });
 
-      if (res.ok) {
-        resetFormData();
-        setEditingId(null);
-        setIsAdding(false);
-        fetchJobs(currentUser.email);
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to submit the job");
       }
+
+      resetFormData();
+      setEditingId(null);
+      setIsAdding(false);
+      fetchJobs(currentUser.email);
     } catch (error) {
       console.error("Failed to submit the job:", error);
-      setError("Failed to submit the job. Please try again.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit the job. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -958,6 +974,8 @@ export default function Jobs() {
                         ...job,
                         extraFields: job.extraFields || [],
                       });
+                      setPdfUrl(job.pdfUrl || "");
+                      setPdfFile(null);
                       setEditingId(job._id!);
                       setIsAdding(false);
                     }}
